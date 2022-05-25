@@ -1,3 +1,6 @@
 .pt
 .xlsx
 .csv
+/**/*.pt
+/**/*.xlsx
+/**/*.csv
