@@ -3,7 +3,7 @@ import torchvision.models as models
 import torch.nn as nn
 from torch.utils.data import DataLoader,random_split
 from torchvision import transforms
-from dataset.tire_Dataset import TireDataset, TireDatasetSplit
+from dataset.tire_Dataset import TireDataset, TireDatasetSplit, TireDatasetMask
 from tqdm import tqdm 
 from tqdm import trange
 import torch.optim as optim 
@@ -57,14 +57,16 @@ def parse_args():
 
 def build_dataset(configs,mode='train'):
     if mode =='train':
-        root_path ='F:\\data\Tire_data\\train'
+        root_path ='/home/MH/DATA/tire/mask/train'
     else:
-        root_path ='F:\\data\Tire_data\\test'
+        root_path ='/home/MH/DATA/tire/mask/test'
 
     if configs['Dataset'] =='TireSplit':
         dataset = TireDatasetSplit(root_path,'F:\\data\Tire_data\\tire_result.xlsx')
     elif configs['Dataset'] == 'Tire':
         dataset = TireDataset(root_path,'F:\\data\Tire_data\\tire_result.xlsx')
+    elif configs['Dataset'] == 'Tire_mask':
+        dataset = TireDatasetMask(root_path)
 
     assert dataset != None,'Please set dataset'
     return dataset
@@ -232,9 +234,12 @@ def eval_once(epoch,model,val_loader,criterian,mode='train'):
         # loss = loss.sum()
         total_loss += loss.item()
         dataloader_bar.set_postfix({'loss':loss.item()})
+    
+
+    
 
     avg_loss = total_loss/len(val_loader)
-    
+    wandb.log({"val loss":avg_loss})
     print(f'epoch {epoch+1}:  val_avg_loss: {avg_loss} total loss: {total_loss}')
     return avg_loss
 
@@ -242,12 +247,7 @@ def eval_once(epoch,model,val_loader,criterian,mode='train'):
 if __name__=='__main__':
     args = parse_args()
 
-    wandb.init(project='tire',entity='munpany')
-    wandb.config={
-        "learning_rate":args.lr,
-        "epochs": args.epochs,
-        "batch_size": args.batch_size
-    }
+
 
     if args.eval:
         eval(args)
@@ -259,4 +259,10 @@ if __name__=='__main__':
             output = infer(args)
             print(output)
     else:
+        wandb.init(project='tire',entity='munpany')
+        wandb.config={
+            "learning_rate":args.lr,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size
+        }
         train(args)

@@ -29,6 +29,7 @@ def tire_set_split_set_dir(path):
 
 
 
+
 #img 자르기 
 def split_img(img,split_cnt = 3):
     w,h,_ = np.shape(img)
@@ -69,5 +70,4 @@ def get_imgset_mean_std(train_ds):
 
 
 if __name__=='__main__':
-    root = 'F:\\data\Tire_data'
-    tire_set_split_set_dir(root)
+    root = '/home/MH/DATA/tire/mask'

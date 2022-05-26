@@ -157,3 +157,64 @@ class TireDataset(Dataset):
         sample['image'] = self.transforms(sample['image'])
 
         return sample
+
+
+class TireDatasetMask(Dataset):
+    def __init__(self,root_path,custom_transforms=None):
+        """_summary_
+
+        Args:
+            root_path (str): data root folder
+            custom_transforms (torchvision.transformers, optional): custom transforms method 
+
+        """
+        super(TireDatasetMask,self).__init__()
+
+        self.split_cnt = 3
+        if custom_transforms:
+            self.transforms = custom_transforms
+
+
+        else:
+            #org:3024 x 4032 default transforms
+            self.transforms = transforms.Compose([transforms.Resize((512,672)),
+                                        transforms.ToTensor()])
+            
+            # self.transforms = transforms.Compose([transforms.Resize((252,336)),
+            #                             transforms.ToTensor(),
+            #                             transforms.Normalize([meanR, meanG, meanB], [stdR, stdG, stdB])]
+            # /self.label_transforms = transforms.Compose([transforms.ToTensor()])
+        # label = torch.FloatTensor(label)
+        self.img_paths = [] 
+        self.label = []
+        dirs = os.listdir(root_path)
+        for _dir in dirs:
+            f_path = os.path.join(root_path,_dir)
+            data_paths = glob(f'{f_path}/*.jpg')
+            label_val = float(_dir.split('_')[1])
+            label_val = round(label_val,2)
+
+            for img in data_paths:
+                self.img_paths.append(img)
+                self.label.append(label_val)
+    
+
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, idx):
+        """_summary_
+
+
+        Returns:
+            dict{'image': tensor, 'label': int }
+        """
+
+        label = self.label[idx]
+        image = Image.open(self.img_paths[idx])
+        # image = np.array(image)
+        # image = np.array(image)
+        sample = {"image":image,'label':torch.tensor(label,dtype=float)}
+        sample['image'] = self.transforms(sample['image'])
+
+        return sample
