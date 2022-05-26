@@ -152,7 +152,6 @@ def train_once(model,train_loader,criterian,optimizer):
     dataloader_bar = tqdm(train_loader,desc='data loop',leave=False)
     for in_data in dataloader_bar:
         output = model(in_data['image'].cuda())
-
         loss = criterian(output.to(torch.float32),in_data['label'].to(torch.float32).cuda().view(2,1))
         loss = loss.sum()
         total_loss += loss.item()
@@ -160,6 +159,7 @@ def train_once(model,train_loader,criterian,optimizer):
         loss.backward()
         optimizer.step()
         dataloader_bar.set_postfix({'loss':loss})
+
     return total_loss
 
 def eval(args):
@@ -171,7 +171,6 @@ def eval(args):
     model.eval()
     
     # totalset = build_dataset(config)
-
     val_set = build_dataset(config,mode='test')
     val_loader = build_dataloader(args,val_set)
     criterian = build_criterion(config)
@@ -223,20 +222,26 @@ def eval_once(epoch,model,val_loader,criterian,mode='train'):
     total_loss= 0
     dataloader_bar = tqdm(val_loader,desc='validation loop')
     model.eval()
+    csv_list = []
     for in_data in dataloader_bar:
         with torch.no_grad():
             output = model(in_data['image'].cuda())
+            
             loss = criterian(output.to(torch.float32).type(torch.FloatTensor),in_data['label'].to(torch.float32).type(torch.FloatTensor).view(2,1))
+            # predict_out = output
+            # labels = in_data['label']
+            # csv_list.append([predict_out[0].item(),labels[0].item()])
+            # csv_list.append([predict_out[1].item(),labels[1].item()])
+
         if mode =='eval':
-            print(f'predict result: {output}')
             label = in_data['label']
-            print(f'label: {label}')
+ 
         # loss = loss.sum()
         total_loss += loss.item()
         dataloader_bar.set_postfix({'loss':loss.item()})
     
-
-    
+    # csv_list = pd.DataFrame(csv_list,columns=['predict','label'])
+    # csv_list.to_csv('mask_result.csv')
 
     avg_loss = total_loss/len(val_loader)
     wandb.log({"val loss":avg_loss})
