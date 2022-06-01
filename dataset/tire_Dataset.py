@@ -140,7 +140,6 @@ class TireDataset(Dataset):
         return len(self.img_paths)
 
 
-
     def __getitem__(self, idx):
         """_summary_
 
