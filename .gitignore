@@ -1,6 +1,9 @@
-.pt
-.xlsx
+*.jpg
+*.pt
+*.xlsx
 .csv
 /**/*.pt
 /**/*.xlsx
 /**/*.csv
+*.ptl
+*.zip

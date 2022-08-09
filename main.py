@@ -49,7 +49,7 @@ def parse_args():
     parser.add_argument('-lr','--lr', default=0.0001, help='learning rate')
     parser.add_argument('--epochs',type=int, default=200, help='Number of epochs')
     parser.add_argument('-bt','--batch_size',type=int ,default=2, help='data batch size')
-    parser.add_argument('--check_iter',type=int, default=100,help='Eval and save interval')
+    parser.add_argument('--check_iter',type=int, default=10,help='Eval and save interval')
     parser.add_argument('--pt_path',type=str,help='path to model weight file')
     args = parser.parse_args()
     return args
@@ -57,9 +57,10 @@ def parse_args():
 
 def build_dataset(configs,mode='train'):
     if mode =='train':
-        root_path ='F:\\data\Tire_data\\train'
+        # root_path ='F:\\data\Tire_data\\train'
+        root_path ='F:\\data/Tire_data/train'
     else:
-        root_path ='F:\\data\Tire_data\\test'
+        root_path ='F:\\data\Tire_data/test'
 
     if configs['Dataset'] =='TireSplit':
         dataset = TireDatasetSplit(root_path,'F:\\data\Tire_data\\tire_result.xlsx')
@@ -174,6 +175,7 @@ def eval(args):
     val_loader = build_dataloader(args,val_set)
     criterian = build_criterion(config)
     avg_loss = eval_once(0,model,val_loader,criterian,mode='eval')
+    
     print(f'avg_loss: {avg_loss}')
     # in_data = next(iter(train_loader))
 
@@ -184,10 +186,18 @@ def infer(args):
     # model = model
     model.load_state_dict(torch.load(args.pt_path)['model_state_dict'])
     model.eval()
-    transform = transforms.Compose([transforms.Resize((512,672)),
-                                        transforms.ToTensor()])
+    # transform = transforms.Compose([transforms.Resize((512,672)),
+    #                                     transforms.ToTensor()])
+
+    transform = transforms.Compose([transforms.Resize((640,480)),
+                                        transforms.ToTensor(),
+                                        transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225))])
+                                        
+                                
     img_data = Image.open(args.img_path)
     img_data = transform(img_data)
+
+    
     img_data = torch.unsqueeze(img_data,0)
     output = model(img_data)
     return output
@@ -200,7 +210,9 @@ def infer_from_dir(args):
     # model = model
     model.load_state_dict(torch.load(args.pt_path)['model_state_dict'])
     model.eval()
-    transform = transforms.Compose([transforms.Resize((512,672)),
+    # transform = transforms.Compose([transforms.Resize((512,672)),
+    #                                     transforms.ToTensor()])
+    transform = transforms.Compose([transforms.Resize((640,480)),
                                         transforms.ToTensor()])
     result =[]
     for img in tqdm(imgs):
@@ -236,18 +248,13 @@ def eval_once(epoch,model,val_loader,criterian,mode='train'):
     avg_loss = total_loss/len(val_loader)
     
     print(f'epoch {epoch+1}:  val_avg_loss: {avg_loss} total loss: {total_loss}')
+    wandb.log({"val loss":avg_loss})
     return avg_loss
 
 
 if __name__=='__main__':
     args = parse_args()
 
-    wandb.init(project='tire',entity='munpany')
-    wandb.config={
-        "learning_rate":args.lr,
-        "epochs": args.epochs,
-        "batch_size": args.batch_size
-    }
 
     if args.eval:
         eval(args)
@@ -259,4 +266,11 @@ if __name__=='__main__':
             output = infer(args)
             print(output)
     else:
+        wandb.init(project='tire',entity='munpany')
+        wandb.config={
+            "learning_rate":args.lr,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size
+        }
+
         train(args)
