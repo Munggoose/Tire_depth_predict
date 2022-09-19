@@ -84,7 +84,7 @@ class TireDatasetSplit(Dataset):
 
 
 class TireDataset(Dataset):
-    def __init__(self,root_path, excel_path,custom_transforms=None):
+    def __init__(self,root_path, excel_path='F:\\data\Tire_data\\tire_result.xlsx',custom_transforms=None):
         """_summary_
 
         Args:
@@ -100,9 +100,12 @@ class TireDataset(Dataset):
 
         else:
             #org:3024 x 4032 default transforms
+            # self.transforms = transforms.Compose([transforms.Resize((640,480)),
+            #                 transforms.ToTensor(),
+            #                 transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225))])
             self.transforms = transforms.Compose([transforms.Resize((640,480)),
                             transforms.ToTensor(),
-                            transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225))])
+                            ])
             
             # self.transforms = transforms.Compose([transforms.Resize((252,336)),
             #                             transforms.ToTensor(),
