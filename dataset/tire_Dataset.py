@@ -1,3 +1,4 @@
+from pickletools import float8
 from PIL import Image
 import os
 import torch
@@ -158,3 +159,53 @@ class TireDataset(Dataset):
         sample = {"image":image,'label':torch.tensor(label,dtype=float)}
         sample['image'] = self.transforms(sample['image'])
         return sample
+
+
+class TireDataset_Mask(Dataset):
+
+    def __init__(self, root,size= (640,480) ,mode='train', custom_transform=None,device='cuda'):
+
+        self.device = device
+        self.mode = mode
+        self.img_list = None
+        if custom_transform:
+            self.transforms = custom_transform
+
+        else:
+            self.transforms = transforms.Compose([transforms.Resize(size),
+                            transforms.ToTensor()])
+
+        self.load_image(root)
+    
+
+    def load_image(self,root):
+        self.img_list = glob(os.path.join(root,self.mode,'**/*.jpg'),recursive=True)
+
+
+        # self.images = [img_loader(img_path) for img_path in img_list]
+        # self.labels = [label_maker(img_path) for img_path in img_list]
+
+    def label_maker(self,path):
+        label = os.path.dirname(path).split('/')[-1].split('_')[-1]
+        return torch.tensor(float(label), dtype=float, device=self.device)
+
+
+    def img_loader(self,path):
+        img = Image.open(path)
+        return self.transforms(img)
+
+
+    def __len__(self):
+        return len(self.img_list)
+    
+
+    def __getitem__(self, idx):
+        
+        path = self.img_list[idx]
+        img = self.img_loader(path)
+        label = self.label_maker(path)
+        return img, label
+
+
+        
+        

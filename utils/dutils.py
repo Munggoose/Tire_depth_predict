@@ -6,6 +6,8 @@ import os
 from sklearn.model_selection import train_test_split
 import shutil
 
+from itertools import repeat
+
 #make validation & train set from dataset
 def tire_set_split_set_dir(path):
     org_path = os.path.join(path,'tire_data')
@@ -67,6 +69,8 @@ def get_imgset_mean_std(train_ds):
     print(stdR,stdG,stdB)
     return (meanR,meanG,meanB), (stdR,stdG,stdB)
 
+def to_ntuple(x,n):
+    return tuple(repeat(x, n))
 
 if __name__=='__main__':
     root = 'F:\\data\Tire_data'
