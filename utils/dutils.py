@@ -65,8 +65,7 @@ def get_imgset_mean_std(train_ds):
     stdB = np.mean([s[2] for s in stdRGB])
     
     
-    print(meanR,meanG,meanB)
-    print(stdR,stdG,stdB)
+
     return (meanR,meanG,meanB), (stdR,stdG,stdB)
 
 def to_ntuple(x,n):

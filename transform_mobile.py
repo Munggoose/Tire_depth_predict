@@ -19,7 +19,7 @@ import yaml
 import os
 from main import build_model
 
-
+from models.Efficient import Efficientformer
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train model')
@@ -52,5 +52,11 @@ def transform_mobile_format(model):
 
 if __name__ == '__main__':
     args = parse_args()
-    model = load_model(args)
+    # model = load_model(args)
+    pre_trained = torch.load('./outputs/Efficientformer/60.pt')
+
+
+    model = Efficientformer(3,1).cuda()
+    model.state_dict = pre_trained.state_dict()
+    model.eval()
     transform_mobile_format(model)
