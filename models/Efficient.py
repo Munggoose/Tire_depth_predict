@@ -111,7 +111,6 @@ class Efficientformer(nn.Module):
         x = self.embed(x)
         x = self.flatten(x)
         out = self.mb_3d(x)
-
         out = self.out_layer(out)
 
         return out

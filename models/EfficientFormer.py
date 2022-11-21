@@ -292,6 +292,7 @@ class Meta4D(nn.Module):
         else:
             x = x + self.drop_path(self.token_mixer(x))
             x = x + self.drop_path(self.mlp(x))
+        
         return x
 
 
