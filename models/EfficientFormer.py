@@ -9,9 +9,9 @@ import torch.nn as nn
 from typing import Dict
 import itertools
 
-# from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.models.layers import DropPath, trunc_normal_
-# from timm.models.registry import register_model
+from timm.models.registry import register_model
 # from timm.models.layers.helpers import to_2tuple
 from utils.dutils import to_ntuple
 
@@ -29,7 +29,7 @@ EfficientFormer_depth = {
 
 
 class Attention(torch.nn.Module):
-    def __init__(self, dim=384, key_dim=32, num_heads=8,
+    def __init__(self, dim=384, key_dim=300, num_heads=8,
                  attn_ratio=4,
                  resolution=7):
         super().__init__()
@@ -45,7 +45,9 @@ class Attention(torch.nn.Module):
         self.proj = nn.Linear(self.dh, dim)
 
         points = list(itertools.product(range(resolution), range(resolution)))
+        points = list(itertools.product(range(30), range(10))) #MH
         N = len(points)
+
         attention_offsets = {}
         idxs = []
         for p1 in points:
@@ -70,11 +72,16 @@ class Attention(torch.nn.Module):
     def forward(self, x):  # x (B,N,C)
         B, N, C = x.shape
         qkv = self.qkv(x)
+
         q, k, v = qkv.reshape(B, N, self.num_heads, -1).split([self.key_dim, self.key_dim, self.d], dim=3)
         q = q.permute(0, 2, 1, 3)
         k = k.permute(0, 2, 1, 3)
         v = v.permute(0, 2, 1, 3)
 
+        a = q @ k.transpose(-2, -1)
+
+
+        
         attn = (
                 (q @ k.transpose(-2, -1)) * self.scale
                 +
@@ -237,6 +244,7 @@ class Meta3D(nn.Module):
 
     def forward(self, x):
         if self.use_layer_scale:
+            a = self.token_mixer(self.norm1(x))
             x = x + self.drop_path(
                 self.layer_scale_1.unsqueeze(0).unsqueeze(0)
                 * self.token_mixer(self.norm1(x)))
@@ -396,10 +404,12 @@ class EfficientFormer(nn.Module):
 
         self.init_cfg = copy.deepcopy(init_cfg)
         # load pre-trained model
-        if self.fork_feat and (
-                self.init_cfg is not None or pretrained is not None):
-            self.init_weights()
+        
+        # if self.fork_feat and (
+        #         self.init_cfg is not None or pretrained is not None):
+        #     self.init_weights()
 
+    
     # init for classification
     def cls_init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -409,35 +419,35 @@ class EfficientFormer(nn.Module):
 
     # init for mmdetection or mmsegmentation by loading
     # imagenet pre-trained weights
-    def init_weights(self, pretrained=None):
-        logger = get_root_logger()
-        if self.init_cfg is None and pretrained is None:
-            logger.warn(f'No pre-trained weights for '
-                        f'{self.__class__.__name__}, '
-                        f'training start from scratch')
-            pass
-        else:
-            assert 'checkpoint' in self.init_cfg, f'Only support ' \
-                                                  f'specify `Pretrained` in ' \
-                                                  f'`init_cfg` in ' \
-                                                  f'{self.__class__.__name__} '
-            if self.init_cfg is not None:
-                ckpt_path = self.init_cfg['checkpoint']
-            elif pretrained is not None:
-                ckpt_path = pretrained
+    # def init_weights(self, pretrained=None):
+    #     logger = get_root_logger()
+    #     if self.init_cfg is None and pretrained is None:
+    #         logger.warn(f'No pre-trained weights for '
+    #                     f'{self.__class__.__name__}, '
+    #                     f'training start from scratch')
+    #         pass
+    #     else:
+    #         assert 'checkpoint' in self.init_cfg, f'Only support ' \
+    #                                               f'specify `Pretrained` in ' \
+    #                                               f'`init_cfg` in ' \
+    #                                               f'{self.__class__.__name__} '
+    #         if self.init_cfg is not None:
+    #             ckpt_path = self.init_cfg['checkpoint']
+    #         elif pretrained is not None:
+    #             ckpt_path = pretrained
 
-            ckpt = _load_checkpoint(
-                ckpt_path, logger=logger, map_location='cpu')
-            if 'state_dict' in ckpt:
-                _state_dict = ckpt['state_dict']
-            elif 'model' in ckpt:
-                _state_dict = ckpt['model']
-            else:
-                _state_dict = ckpt
+    #         ckpt = _load_checkpoint(
+    #             ckpt_path, logger=logger, map_location='cpu')
+    #         if 'state_dict' in ckpt:
+    #             _state_dict = ckpt['state_dict']
+    #         elif 'model' in ckpt:
+    #             _state_dict = ckpt['model']
+    #         else:
+    #             _state_dict = ckpt
 
-            state_dict = _state_dict
-            missing_keys, unexpected_keys = \
-                self.load_state_dict(state_dict, False)
+    #         state_dict = _state_dict
+    #         missing_keys, unexpected_keys = \
+    #             self.load_state_dict(state_dict, False)
 
     def forward_tokens(self, x):
         outs = []
@@ -458,20 +468,36 @@ class EfficientFormer(nn.Module):
             # otuput features of four stages for dense prediction
             return x
         x = self.norm(x)
+
         if self.dist:
+
             cls_out = self.head(x.mean(-2)), self.dist_head(x.mean(-2))
-            if not self.training:#
-                cls_out = (cls_out[0] + cls_out[1]) / 2
+            cls_out = (cls_out[0] + cls_out[1]) / 2 #MH
+            
+            # if not self.training:#
+            #     cls_out = (cls_out[0] + cls_out[1]) / 2
         else:
             cls_out = self.head(x.mean(-2))
         # for image classification
+
         return cls_out
+
+
+# def _cfg(url='', **kwargs):
+#     return {
+#         'url': url,
+#         'num_classes': 1000, 'input_size': (3, 224, 224), 'pool_size': None,
+#         'crop_pct': .95, 'interpolation': 'bicubic',
+#         'mean': IMAGENET_DEFAULT_MEAN, 'std': IMAGENET_DEFAULT_STD,
+#         'classifier': 'head',
+#         **kwargs
+#     }
 
 
 def _cfg(url='', **kwargs):
     return {
         'url': url,
-        'num_classes': 1000, 'input_size': (3, 224, 224), 'pool_size': None,
+        'num_classes': 5, 'input_size': (3, 640, 480), 'pool_size': None,
         'crop_pct': .95, 'interpolation': 'bicubic',
         'mean': IMAGENET_DEFAULT_MEAN, 'std': IMAGENET_DEFAULT_STD,
         'classifier': 'head',

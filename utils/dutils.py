@@ -71,6 +71,17 @@ def get_imgset_mean_std(train_ds):
 def to_ntuple(x,n):
     return tuple(repeat(x, n))
 
+
+def early_stopping(best_loss,val_loss,cur_score,stop_score):
+    if best_loss < val_loss:
+        cur_score += 1
+    else:
+        cur_score = 0
+    if cur_score >= stop_score:
+        return cur_score, True
+    return cur_score, False
+
+
 if __name__=='__main__':
     root = 'F:\\data\Tire_data'
     tire_set_split_set_dir(root)

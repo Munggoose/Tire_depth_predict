@@ -288,5 +288,39 @@ class TireDataset_Mask2(Dataset):
         label = self.label_maker(path)
         return img, label
 
+
+class TireDatasetMode(Dataset):
+    
+    def __init__(self, root,size= (640,480), custom_transform=None,device='cuda'):
+        self.device = device
+        self.images = glob(os.path.join(root,'**/**/*.jpg')) 
+        self.label_dict = {'1.5': 0,'4.0': 1,'4.5':2,'5.5':3,'7.0':4}
+        self.make_label()
         
-        
+        if custom_transform:
+            self.transform = custom_transform
+        else:
+            self.transforms = transforms.Compose([transforms.Resize(size),
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225)),])
+            
+    def make_label(self):
+        labels = []
+        for img_path in self.images:
+            label = self.label_dict[img_path.split('/')[-3]]
+            # label = torch.tensor(label, device=self.device, dtype=torch.int8)
+            labels.append(label)
+        self.labels = torch.tensor(labels,device=self.device)
+    
+    def load_image(self, x):
+        img = Image.open(x)
+        return self.transforms(img)
+    
+    def __len__(self):
+        return len(self.labels)
+    
+    
+    def __getitem__(self,idx):
+        img = self.load_image(self.images[idx])
+        label = self.labels[idx]
+        return (img, label)
