@@ -16,7 +16,7 @@ from utils.dutils import early_stopping
 os.environ['CUDA_VISIBLE_DEVICE'] = "0,1"
 
 #configs
-root = '/share_dir/Tire/train/'
+root = '/share_dir/Tire/labeled_org/'
 batch_size = 16
 epochs = 100
 device='cuda'
@@ -45,7 +45,8 @@ model = EfficientFormer(
 model = nn.DataParallel(model).cuda()
 
 
-dataset = TireDatasetMode(root,size=(640,480))
+# dataset = TireDatasetMode(root,size=(640,480))
+dataset = TireDataset_Mask(root,size=(640,480))
 dataset_size = len(dataset)
 train_size = int(dataset_size * 0.9)
 # testset = TireDataset_Mask(root,mode='test')

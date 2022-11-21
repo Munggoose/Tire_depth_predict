@@ -10,6 +10,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from glob import glob
 from utils import split_img
+import json
+import cv2
 
 
 #tire Dataset class
@@ -164,48 +166,57 @@ class TireDataset(Dataset):
 
 class TireDataset_Mask(Dataset):
 
-    def __init__(self, root,size= (640,480) ,mode='train', custom_transform=None,device='cuda'):
-
+    def __init__(self, root,size= (640,480), custom_transform=None,device='cuda'):
         self.device = device
-        self.mode = mode
-        self.img_list = None
+        self.images = glob(os.path.join(root,'**/**/*.jpg'))
+        self.mask_imgs = []
+        self.label_dict = {'1.5': 0,'4.0': 1,'4.5':2,'5.5':3,'7.0':4}
+        self.make_label()
+        
         if custom_transform:
-            self.transforms = custom_transform
-
+            self.transform = custom_transform
         else:
             self.transforms = transforms.Compose([transforms.Resize(size),
-                            transforms.ToTensor()])
-
-        self.load_image(root)
-    
-
-    def load_image(self,root):
-        self.img_list = glob(os.path.join(root,self.mode,'**/*.jpg'),recursive=True)
-
-
-        # self.images = [img_loader(img_path) for img_path in img_list]
-        # self.labels = [label_maker(img_path) for img_path in img_list]
-
-    def label_maker(self,path):
-        label = os.path.dirname(path).split('/')[-1].split('_')[-1]
-        return torch.tensor(float(label), dtype=torch.float32, device=self.device)
+                                                transforms.ToTensor(),
+                                                transforms.Normalize((0.485, 0.456, 0.406),(0.229, 0.224, 0.225)),])
+            
+    def make_label(self):
+        labels = []
+        for img_path in self.images:
+            label = self.label_dict[img_path.split('/')[-3]]
+            img = self.mask_img(img_path)
+            # label = torch.tensor(label, device=self.device, dtype=torch.int8)
+            labels.append(label)
+            self.mask_imgs.append(img)
+        self.labels = torch.tensor(labels,device=self.device)
 
 
-    def img_loader(self,path):
-        img = Image.open(path)
-        return self.transforms(img)
-
-
-    def __len__(self):
-        return len(self.img_list)
-    
-
-    def __getitem__(self, idx):
         
-        path = self.img_list[idx]
-        img = self.img_loader(path)
-        label = self.label_maker(path)
-        return img, label
+    def mask_img(self, img_path):
+        json_path = img_path[:-3] + 'json'
+        img = Image.open(img_path)
+        with open(json_path, 'r') as f:
+            j_data = json.load(f)
+        points = j_data['shapes'][0]['points']
+        mask1 = np.zeros((img.size),dtype = np.uint8)
+        mask_img = cv2.fillPoly(mask1,np.int32([points]),1)
+        img_arr = np.array(img)
+        mask_img = np.expand_dims(mask_img, axis=2)
+        masked_img = np.transpose(img_arr,[1,0,2]) * mask_img
+        img = Image.fromarray(masked_img)
+        
+        return img
+    
+    def __len__(self):
+        return len(self.labels)
+    
+    
+    def __getitem__(self,idx):
+        img = self.transforms(self.mask_imgs[idx])
+        label = self.labels[idx]
+        return (img, label)
+    
+
 
 
 class TireDataset_Mask2(Dataset):
