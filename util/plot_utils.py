@@ -9,6 +9,28 @@ import matplotlib.pyplot as plt
 
 from pathlib import Path, PurePath
 
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
+
+
+def plot_results_Image(pil_img, prob, boxes,classes):
+    
+    fig = plt.figure(figsize=(16,10))
+    canvas =FigureCanvas(fig)
+    fig.imshow(pil_img)
+    ax = fig.gca()
+    for p, (xmin, ymin, xmax, ymax) in zip(prob, boxes.tolist()):
+        ax.add_patch(plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
+                                   fill=False, linewidth=3))
+        cl = p.argmax()
+        text = f'{classes[cl]}: {p[cl]:0.2f}'
+        ax.text(xmin, ymin, text, fontsize=15,
+                bbox=dict(facecolor='yellow', alpha=0.5))
+    fig.axis('off')
+    canvas.draw()
+    image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+    # plt.show()
+    return image
 
 def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):
     '''
