@@ -44,11 +44,11 @@ EfficientFormer_depth = {
 #         num_classes=5,
 #         vit_num=4)
 
-model = torch.load('./outputs/classifier/69.pt')
+model = torch.load('./outputs/classifier/29.pt')
 model = model.cuda()
 
 
-dataset = torch.load('./outputs/classifier/valdiation_data.dataset') 
+dataset = torch.load('./outputs/classifier/valdiation_data2.dataset') 
 # dataset = TireDatasetMode(root,size=(640,480))
 
 testloader = DataLoader(dataset,batch_size = batch_size ,shuffle=True,num_workers=0,drop_last=True)
@@ -65,7 +65,7 @@ if __name__== '__main__':
             pred = torch.argmax(out,axis=1)
             pred = pred.detach().to('cpu').numpy()
             label = label.detach().to('cpu').numpy()
-            print(f"pred {pred} : gt : {label}")
+            # print(f"pred {pred} : gt : {label}")
             total_pred.extend(pred)
             total_gt.extend(label)
     print(total_pred)

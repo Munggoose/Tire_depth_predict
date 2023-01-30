@@ -56,7 +56,9 @@ valloader = DataLoader(validationset,batch_size = batch_size ,shuffle=True,num_w
 
 # testloader = DataLoader(trainset,batch_size = 1 ,shuffle=True,num_workers=8,drop_last=True)
 optimizer = optim.Adam(model.parameters(),lr=0.0001)
-criterion = nn.CrossEntropyLoss()
+weights =[1.0,1.0,1.0,0.7,1.0]
+class_weights = torch.FloatTensor(weights).cuda()
+criterion = nn.CrossEntropyLoss(weight=class_weights,reduction='sum')
 torch.save(validationset,f'./outputs/classifier/valdiation_data2.dataset')
 
 

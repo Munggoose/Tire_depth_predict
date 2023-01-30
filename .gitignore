@@ -1,5 +1,5 @@
 *.pth
-./**/__pycache__/
+./**/__pycache__/**
 *.jpg
 *.pt
 *.xlsx
@@ -10,3 +10,4 @@
 *.ptl
 *.zip
 *.dataset
+**/outputs/**
