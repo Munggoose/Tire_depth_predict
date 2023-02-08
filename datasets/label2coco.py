@@ -176,18 +176,18 @@ def convert(
         save_path = str(Path(export_dir) / "dataset.json")
         save_json(coco.json, save_path)
         logger.info(f"Converted annotations in COCO format is exported to {save_path}")
-        
+    print(coco.categories)
 
 
 if __name__ =='__main__':
     # set directory that contains labelme annotations and image files
-    labelme_folder = "F:\\data/Tire_data/final/labeled_org/"
+    labelme_folder = "/share_dir/Tire/balance"
 
     # set export dir
     export_dir = "./export"
 
     # set train split rate
-    train_split_rate = 0.80
+    train_split_rate = 0.9
 
     # convert labelme annotations to coco
     # labelme2coco.convert(labelme_folder, export_dir, train_split_rate)
