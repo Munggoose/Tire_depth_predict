@@ -16,6 +16,8 @@ from util.misc import NestedTensor, is_main_process
 from .position_encoding import build_position_encoding
 
 
+torch.nn.BatchNorm2d
+
 class FrozenBatchNorm2d(torch.nn.Module):
     """
     BatchNorm2d where the batch statistics and the affine parameters are fixed.
@@ -45,6 +47,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
     def forward(self, x):
         # move reshapes to the beginning
         # to make it fuser-friendly
+        # MH original batchnormalization term in pytorch y = \frac{x - \mathrm{E}[x]}{ \sqrt{\mathrm{Var}[x] + \epsilon}} * \gamma + \beta 
         w = self.weight.reshape(1, -1, 1, 1)
         b = self.bias.reshape(1, -1, 1, 1)
         rv = self.running_var.reshape(1, -1, 1, 1)

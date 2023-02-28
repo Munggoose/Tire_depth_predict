@@ -32,6 +32,7 @@ class Visualizer:
             ),
         ]
 
+        
         # propagate through the model
         outputs = model(img)
 

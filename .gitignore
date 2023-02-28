@@ -21,3 +21,4 @@ not_tracked_dir/
 *.png
 *.pt
 *.json
+*.ptl

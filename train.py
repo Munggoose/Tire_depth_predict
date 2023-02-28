@@ -81,7 +81,7 @@ def get_args_parser():
     parser.add_argument('--mask_loss_coef', default=1, type=float)
     parser.add_argument('--dice_loss_coef', default=1, type=float)
     parser.add_argument('--bbox_loss_coef', default=1, type=float)
-    parser.add_argument('--giou_loss_coef', default=2, type=float)
+    parser.add_argument('--giou_loss_coef', default=0, type=float)
     parser.add_argument('--eos_coef', default=0.1, type=float,
                         help="Relative classification weight of the no-object class")
 
@@ -91,7 +91,7 @@ def get_args_parser():
     parser.add_argument('--image_root',type=str, default='')
     parser.add_argument('--coco_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
-    parser.add_argument('--n_class',default=5,type=int)
+    parser.add_argument('--n_class',default=6,type=int)
 
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
@@ -132,7 +132,7 @@ def main(args):
 
     
     model = torch.hub.load('facebookresearch/detr', 'detr_resnet101', pretrained=True)
-    model._modules['class_embed'] = nn.Linear(in_features=256, out_features=6,bias=True)
+    model._modules['class_embed'] = nn.Linear(in_features=256, out_features= args.n_class+1,bias=True)
     model._modules['qeury_embed'] = nn.Embedding(args.num_queries,256)
     
 
@@ -172,11 +172,13 @@ def main(args):
     weight_dict = {'loss_ce': 5, 'loss_bbox': args.bbox_loss_coef}
     weight_dict['loss_giou'] = args.giou_loss_coef
     
+    
     if args.masks:
         weight_dict["loss_mask"] = args.mask_loss_coef
         weight_dict["loss_dice"] = args.dice_loss_coef
     
     losses = ['labels', 'boxes', 'cardinality']
+    
     
     if args.masks:
         losses += ["masks"]
@@ -199,6 +201,9 @@ def main(args):
         model.train()
         criterion.train()
         for samples, targets in tqdm(data_loader_train):
+            
+            print(targets)
+            exit()
 
             samples = samples.to(device)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
@@ -228,7 +233,7 @@ def main(args):
             # if max_norm > 0:
             #     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
             optimizer.step()
-            lr_scheduler.step()
+        lr_scheduler.step()
         class_loss_mean = np.array(class_losses).mean()
         mean_loss = np.array(train_loss).mean()
         
