@@ -44,8 +44,8 @@ def transform_mobile_format(model,example = None):
     if example is not None:
         traced_script_module = torch.jit.trace(model, example)
         traced_script_module_optimized = optimize_for_mobile(traced_script_module)      
-        traced_script_module_optimized._save_for_lite_interpreter("and_model.ptl")
-        return
+        traced_script_module_optimized._save_for_lite_interpreter("android_model.ptl")
+        return 
         
     
     
@@ -55,15 +55,21 @@ def transform_mobile_format(model,example = None):
     
     
     # Export full jit version model (not compatible with lite interpreter)    
-    scripted_module.save("sample_scripted_module.pt")
+    scripted_module.save("and_model.pt")
     # Export lite interpreter version model (compatible with lite interpreter)
-    scripted_module._save_for_lite_interpreter("sample_scripted_module_lite_interpreter.ptl")
-    # using optimized lite interpreter model makes inference about 60% faster than the non-optimized lite interpreter model, which is about 6% faster than the non-optimized full jit model
-    optimized_scripted_module._save_for_lite_interpreter("Efficientnet_scripted_optimized.ptl")
+    # scripted_module._save_for_lite_interpreter("sample_scripted_module_lite_interpreter.ptl")
+    # # using optimized lite interpreter model makes inference about 60% faster than the non-optimized lite interpreter model, which is about 6% faster than the non-optimized full jit model
+    # optimized_scripted_module._save_for_lite_interpreter("Efficientnet_scripted_optimized.ptl")
+    print('save script mode')
 
 
 if __name__ == '__main__':
-    example = torch.randn((1,640,480))
-    model = torch.load('0210.pt')
+    # example = torch.randn((1,3,640,480))
+    example = None
+    model = torch.load('./outputs/sample.pt')
     model.eval()
+    model.to('cpu')
+    # output = model(example)
+
+    print(model.training)
     transform_mobile_format(model,example)
